@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AAES RUH — Weekly OT Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface2: #f0ede8;
+    --border: #e5e0d8;
+    --text: #1a1916;
+    --text-muted: #7a7569;
+    --accent: #2d5a3d;
+    --accent-light: #e8f2ec;
+    --warn: #c4501a;
+    --warn-light: #fdf0eb;
+    --mid: #b8860b;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
+
+  .header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 32px; display: flex; align-items: center; justify-content: space-between;
+    height: 64px; position: sticky; top: 0; z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo-mark {
+    width: 36px; height: 36px; background: var(--accent); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 13px; font-weight: 600;
+  }
+  .header-title { font-size: 15px; font-weight: 600; }
+  .header-sub { font-size: 12px; color: var(--text-muted); }
+  .week-badge {
+    background: var(--accent-light); color: var(--accent);
+    font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500;
+    padding: 6px 14px; border-radius: 20px; border: 1px solid #c5dccb;
+  }
+
+  .main { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+  .status-bar {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 20px;
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 24px; box-shadow: var(--shadow);
+  }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; transition: all 0.3s; }
+  .status-text { font-size: 13px; color: var(--text-muted); }
+  .status-text strong { color: var(--text); font-weight: 500; }
+  .status-synced { margin-left: auto; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); }
+
+  .area-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tab-btn {
+    padding: 8px 18px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 8px;
+  }
+  .tab-btn:hover { background: var(--surface2); color: var(--text); }
+  .tab-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+  .tab-count { padding: 1px 7px; border-radius: 10px; font-size: 11px; background: var(--surface2); color: var(--text-muted); }
+  .tab-btn.active .tab-count { background: rgba(255,255,255,0.25); color: white; }
+
+  .pool-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px 28px;
+    margin-bottom: 20px; box-shadow: var(--shadow);
+  }
+  .pool-top {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 20px; gap: 20px; flex-wrap: wrap;
+  }
+  .pool-area-name { font-size: 18px; font-weight: 600; margin-bottom: 3px; }
+  .pool-week-label { font-size: 12px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+  .pool-numbers { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
+  .pool-stat { display: flex; flex-direction: column; gap: 3px; text-align: right; }
+  .pool-stat-label { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
+  .pool-stat-value { font-family: 'DM Mono', monospace; font-size: 28px; font-weight: 500; line-height: 1; }
+  .pool-stat-value .unit { font-size: 13px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-weight: 400; }
+  .pool-stat-value.c-remaining { color: var(--accent); }
+  .pool-stat-value.c-warn { color: var(--warn); }
+  .pool-divider { width: 1px; height: 52px; background: var(--border); align-self: center; }
+  .progress-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); font-family: 'DM Mono', monospace; margin-bottom: 8px; }
+  .progress-track { height: 8px; background: var(--surface2); border-radius: 10px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 10px; background: var(--accent); transition: width 0.5s ease; }
+  .progress-fill.mid { background: var(--mid); }
+  .progress-fill.warn { background: var(--warn); }
+
+  .day-selector { display: flex; gap: 6px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+  .day-label { font-size: 12px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-right: 4px; }
+  .day-btn {
+    padding: 6px 13px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: all 0.12s;
+  }
+  .day-btn:hover:not(:disabled) { background: var(--surface2); color: var(--text); }
+  .day-btn.active { background: var(--text); color: white; border-color: var(--text); }
+  .day-btn.today-mark { border-color: var(--accent); color: var(--accent); }
+  .day-btn.today-mark.active { background: var(--text); color: white; border-color: var(--text); }
+  .day-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: var(--surface2); border-bottom: 1px solid var(--border); }
+  th { padding: 11px 16px; text-align: left; font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap; }
+  th.center { text-align: center; }
+  th.right { text-align: right; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #faf9f7; }
+  td { padding: 11px 16px; vertical-align: middle; }
+  .emp-num { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); width: 28px; }
+  .emp-prn { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-muted); }
+  .emp-name { font-size: 13px; font-weight: 500; }
+
+  .today-badge { font-family: 'DM Mono', monospace; font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 500; display: inline-block; }
+  .badge-logged { background: var(--accent-light); color: var(--accent); }
+  .badge-none { background: var(--surface2); color: var(--text-muted); }
+
+  .log-row { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+  .hour-select {
+    appearance: none;
+    background: var(--surface2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237a7569' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") right 8px center no-repeat;
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 28px 6px 10px;
+    font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text);
+    cursor: pointer; width: 70px;
+  }
+  .hour-select:focus { outline: none; border-color: var(--accent); }
+  .log-btn {
+    padding: 6px 14px; background: var(--accent); color: white;
+    border: none; border-radius: 6px;
+    font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: opacity 0.15s; white-space: nowrap;
+  }
+  .log-btn:hover { opacity: 0.85; }
+  .log-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .pool-warn-row { background: var(--warn-light); }
+  .pool-warn-row td { padding: 14px 20px; color: var(--warn); font-size: 13px; font-weight: 500; text-align: center; }
+
+  .toast {
+    position: fixed; bottom: 28px; right: 28px;
+    background: var(--text); color: white;
+    padding: 12px 20px; border-radius: 10px;
+    font-size: 13px; font-weight: 500;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    transform: translateY(80px); opacity: 0;
+    transition: all 0.25s ease; z-index: 999; max-width: 340px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.error { background: var(--warn); }
+  .toast.success { background: var(--accent); }
+
+  .loading { display: flex; align-items: center; justify-content: center; height: 160px; color: var(--text-muted); font-size: 13px; gap: 10px; }
+  .spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes flash { 0% { background: var(--accent-light); } 100% { background: transparent; } }
+  .row-flash { animation: flash 0.9s ease; }
+
+  @media (max-width: 680px) {
+    .main { padding: 16px; }
+    .header { padding: 0 16px; }
+    th:nth-child(2), td:nth-child(2) { display: none; }
+    .pool-stat-value { font-size: 22px; }
+    .pool-numbers { gap: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo-mark">OT</div>
+    <div>
+      <div class="header-title">Workshop OT Tracker</div>
+      <div class="header-sub">AAES — RUH Station</div>
+    </div>
+  </div>
+  <div class="week-badge" id="weekBadge">—</div>
+</header>
+
+<main class="main">
+  <div class="status-bar">
+    <div class="status-dot" id="statusDot"></div>
+    <div class="status-text" id="statusText">Connecting…</div>
+    <div class="status-synced" id="statusSynced"></div>
+  </div>
+
+  <div class="area-tabs" id="areaTabs"></div>
+
+  <div class="pool-card" id="poolCard">
+    <div class="loading"><div class="spinner"></div> Loading area data…</div>
+  </div>
+
+  <div class="day-selector" id="daySel"></div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>PRN</th>
+          <th>Employee</th>
+          <th class="center">Week Total</th>
+          <th class="center">Today</th>
+          <th class="right">Log Hours</th>
+        </tr>
+      </thead>
+      <tbody id="empBody">
+        <tr><td colspan="6"><div class="loading"><div class="spinner"></div> Loading…</div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwCkOeW8BjQkHa7VVym0UP9Pwf-Kp2eVhfA271f63dA9UUSKtxZg0B35IDAhLTXFJ2w0w/exec';
+
+const AREAS = {
+  'Front Floor': [
+    {prn:'10476',name:'Mohammed AlDarwish'},{prn:'10280',name:'Emerlito Martin'},
+    {prn:'10041',name:'Balbir'},{prn:'10150',name:'Wilmar Mistica'},
+    {prn:'10174',name:'Priyank Vathiyath'},{prn:'10202',name:'Ramanand'},
+    {prn:'10207',name:'Sunil'},{prn:'10217',name:'Rahamatullah'},
+    {prn:'10279',name:'Diosdado Paguio'},{prn:'10393',name:'Pedro Bertillo'},
+    {prn:'10396',name:'Rodolfo Latona'},{prn:'10445',name:'Kabir'},
+    {prn:'10613',name:'Sachin Sharma'},{prn:'10618',name:'Sher Khan'},
+    {prn:'10629',name:'Singaravelan'},{prn:'10639',name:'Mohammed Alotaibi'},
+    {prn:'10662',name:'Mohsin Mirza'},
+  ],
+  'Rear Floor': [
+    {prn:'10163',name:'Rommel Inoy'},{prn:'10134',name:'Renante Hermidilla'},
+    {prn:'10650',name:'Vijayan'},{prn:'10041',name:'Balbir'},
+    {prn:'10149',name:'Romulo Cruzada'},{prn:'10460',name:'Richard'},
+    {prn:'10218',name:'Aash'},{prn:'10614',name:'Hilal Anwar'},
+    {prn:'10498',name:'Alexes Madera'},{prn:'10502',name:'Samieh Salah Fadoul'},
+    {prn:'10610',name:'Manny Belmonte'},{prn:'10645',name:'Thomas Riju'},
+    {prn:'10678',name:'Faisal Mahmoud'},
+  ],
+  'Body Shop': [
+    {prn:'10607',name:'Mohammed Abdulmuti'},{prn:'10200',name:'Premkumar'},
+    {prn:'10107',name:'Anandan'},{prn:'10266',name:'Vikash Diudi'},
+    {prn:'10397',name:'Rodelo Gardosi'},{prn:'10432',name:'Ricardo Alinas'},
+    {prn:'10442',name:'Ruben'},{prn:'10473',name:'Naeem'},
+    {prn:'10566',name:'Muhammad Saleem'},{prn:'10571',name:'Sajjad Ali'},
+    {prn:'10595',name:'Arslan'},
+  ],
+  'Line Maintenance': [
+    {prn:'10580',name:'Yasser Al Qarni'},{prn:'10648',name:'Sathiya Seelan'},
+    {prn:'10028',name:'Al Nasser Asuero'},{prn:'10036',name:'Akshay Karuthanari'},
+    {prn:'10140',name:'Rodel Ramos'},{prn:'10146',name:'Ricardo Reyes Ramos'},
+    {prn:'10153',name:'Garcia Angel Jr'},{prn:'10188',name:'Mohammad Zikrullah'},
+    {prn:'10190',name:'Sanjay'},{prn:'10208',name:'Zuber Shakil Ahmed'},
+    {prn:'10401',name:'Ferdinand'},{prn:'10463',name:'Pedro'},
+    {prn:'10462',name:'Haji'},{prn:'10491',name:'Noel Satimbre'},
+    {prn:'10499',name:'Saifullah Shaik'},{prn:'10503',name:'Samih Salah'},
+    {prn:'10517',name:'Areeb Jabbar'},{prn:'10602',name:'Osama Albarjas'},
+    {prn:'10614',name:'Hilal Anwar'},
+  ]
+};
+
+function getWeekInfo(date) {
+  var d = new Date(date); d.setHours(0,0,0,0);
+  var anchor = new Date('2026-05-17'); anchor.setHours(0,0,0,0);
+  var diff = Math.floor((d - anchor) / 86400000);
+  var weekNum = Math.floor(Math.max(0, diff) / 7);
+  var weekStart = new Date(anchor);
+  weekStart.setDate(anchor.getDate() + weekNum * 7);
+  var weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  return { weekNum: weekNum, weekStart: weekStart, weekEnd: weekEnd };
+}
+
+function fmt(d) { return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}); }
+function toKey(d) { return d.toISOString().slice(0,10); }
+var DAY_NAMES = ['Sat','Sun','Mon','Tue','Wed','Thu','Fri'];
+
+var currentArea = 'Front Floor';
+var today = new Date(); today.setHours(0,0,0,0);
+var selectedDay = new Date(today);
+var areaData = { allocated: 0, logs: {} };
+
+async function fetchAreaData() {
+  var info = getWeekInfo(today);
+  setStatus('loading', 'Syncing with Google Sheets…');
+  try {
+    var params = 'action=getWeek&area=' + encodeURIComponent(currentArea) + '&weekStart=' + toKey(info.weekStart);
+    var res  = await fetch(APPS_SCRIPT_URL + '?' + params);
+    var json = await res.json();
+    if (json.error) throw new Error(json.error);
+    areaData = json.data;
+    setStatus('ok', '<strong>' + currentArea + '</strong> — live');
+  } catch(e) {
+    areaData = { allocated: 0, logs: {} };
+    setStatus('error', 'Error: ' + e.message);
+    console.error(e);
+  }
+  renderPool();
+  renderTable();
+}
+
+async function postLog(prn, dateKey, hours) {
+  var info = getWeekInfo(today);
+  try {
+    var params = 'action=logHours'
+      + '&area='      + encodeURIComponent(currentArea)
+      + '&prn='       + encodeURIComponent(prn)
+      + '&dateKey='   + encodeURIComponent(dateKey)
+      + '&hours='     + encodeURIComponent(hours)
+      + '&weekStart=' + encodeURIComponent(toKey(info.weekStart));
+    var res  = await fetch(APPS_SCRIPT_URL + '?' + params);
+    var json = await res.json();
+    if (json.error) throw new Error(json.error);
+    return { ok: true };
+  } catch(e) {
+    return { ok: false, msg: e.message };
+  }
+}
+
+function setStatus(state, msg) {
+  var dot = document.getElementById('statusDot');
+  document.getElementById('statusText').innerHTML = msg;
+  var c = { ok:'#22c55e', error:'#ef4444', loading:'#f59e0b' };
+  var s = { ok:'rgba(34,197,94,0.2)', error:'rgba(239,68,68,0.2)', loading:'rgba(245,158,11,0.2)' };
+  dot.style.background = c[state];
+  dot.style.boxShadow = '0 0 0 3px ' + s[state];
+  document.getElementById('statusSynced').textContent = state === 'ok'
+    ? 'Last sync: ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
+}
+
+function getPoolStats() {
+  var allocated = areaData.allocated || 0;
+  var used = 0;
+  Object.values(areaData.logs || {}).forEach(function(days) {
+    Object.values(days).forEach(function(h) { used += h; });
+  });
+  var remaining = Math.max(0, allocated - used);
+  var pct = allocated > 0 ? Math.min(100, Math.round(used / allocated * 100)) : 0;
+  return { allocated: allocated, used: used, remaining: remaining, pct: pct };
+}
+
+function renderPool() {
+  var info = getWeekInfo(today);
+  var s = getPoolStats();
+  var fillClass = s.pct >= 85 ? 'warn' : s.pct >= 55 ? 'mid' : '';
+  document.getElementById('poolCard').innerHTML =
+    '<div class="pool-top">' +
+      '<div>' +
+        '<div class="pool-area-name">' + currentArea + '</div>' +
+        '<div class="pool-week-label">W' + (info.weekNum+1) + ' &nbsp;·&nbsp; ' + fmt(info.weekStart) + ' → ' + fmt(info.weekEnd) + '</div>' +
+      '</div>' +
+      '<div class="pool-numbers">' +
+        '<div class="pool-stat"><div class="pool-stat-label">Allocated</div><div class="pool-stat-value">' + s.allocated + '<span class="unit"> hrs</span></div></div>' +
+        '<div class="pool-divider"></div>' +
+        '<div class="pool-stat"><div class="pool-stat-label">Used</div><div class="pool-stat-value">' + s.used + '<span class="unit"> hrs</span></div></div>' +
+        '<div class="pool-divider"></div>' +
+        '<div class="pool-stat"><div class="pool-stat-label">Remaining</div><div class="pool-stat-value ' + (s.remaining===0?'c-warn':'c-remaining') + '">' + s.remaining + '<span class="unit"> hrs</span></div></div>' +
+      '</div>' +
+    '</div>' +
+    '<div>' +
+      '<div class="progress-meta"><span>' + s.used + ' of ' + s.allocated + ' hours used this week</span><span>' + s.pct + '%</span></div>' +
+      '<div class="progress-track"><div class="progress-fill ' + fillClass + '" style="width:' + s.pct + '%"></div></div>' +
+    '</div>';
+}
+
+function renderTabs() {
+  document.getElementById('areaTabs').innerHTML = Object.keys(AREAS).map(function(a) {
+    return '<button class="tab-btn ' + (a===currentArea?'active':'') + '" onclick="switchArea(\'' + a + '\')">' +
+      a + ' <span class="tab-count">' + AREAS[a].length + '</span></button>';
+  }).join('');
+}
+
+function switchArea(a) {
+  currentArea = a;
+  areaData = { allocated:0, logs:{} };
+  renderTabs(); renderPool(); renderTable();
+  fetchAreaData();
+}
+
+function renderDaySelector() {
+  var info = getWeekInfo(today);
+  var html = '<span class="day-label">Log for:</span>';
+  for (var i = 0; i < 7; i++) {
+    var d = new Date(info.weekStart);
+    d.setDate(info.weekStart.getDate() + i);
+    var isToday  = toKey(d) === toKey(today);
+    var isSel    = toKey(d) === toKey(selectedDay);
+    var isFuture = d > today;
+    html += '<button class="day-btn ' + (isSel?'active':'') + ' ' + (isToday&&!isSel?'today-mark':'') + '"' +
+      ' onclick="selectDay(' + d.getTime() + ')"' +
+      (isFuture?' disabled':'') + '>' +
+      DAY_NAMES[i] + ' ' + d.getDate() + '</button>';
+  }
+  document.getElementById('daySel').innerHTML = html;
+}
+
+function selectDay(ts) {
+  selectedDay = new Date(ts);
+  renderDaySelector(); renderTable();
+}
+
+function renderTable() {
+  var employees = AREAS[currentArea];
+  var dateKey   = toKey(selectedDay);
+  var stats     = getPoolStats();
+  var poolEmpty = stats.remaining <= 0;
+  var logs      = areaData.logs || {};
+  var canLogDay = toKey(selectedDay) <= toKey(today);
+
+  var topNotice = '';
+  if (poolEmpty && canLogDay) {
+    topNotice = '<tr class="pool-warn-row"><td colspan="6">⚠ Weekly OT pool for <strong>' + currentArea + '</strong> is fully used — no more hours can be logged this week.</td></tr>';
+  }
+
+  var rows = employees.map(function(emp, i) {
+    var empLogs    = logs[emp.prn] || {};
+    var weekTotal  = Object.values(empLogs).reduce(function(a,b){return a+b;},0);
+    var todayHours = empLogs[dateKey] || 0;
+
+    var todayBadge = todayHours > 0
+      ? '<span class="today-badge badge-logged">+' + todayHours + 'h</span>'
+      : '<span class="today-badge badge-none">—</span>';
+
+    var maxAdd = Math.min(3, stats.remaining);
+    var canLog = canLogDay && !poolEmpty && maxAdd > 0;
+    var options = [1,2,3].filter(function(h){return h<=maxAdd;}).map(function(h){return '<option value="'+h+'">'+h+'h</option>';}).join('');
+
+    return '<tr id="row-' + emp.prn + '">' +
+      '<td class="emp-num">' + (i+1) + '</td>' +
+      '<td class="emp-prn">' + emp.prn + '</td>' +
+      '<td class="emp-name">' + emp.name + '</td>' +
+      '<td style="text-align:center">' + (weekTotal>0
+        ? '<span style="font-family:\'DM Mono\',monospace;font-size:12px;font-weight:500;color:var(--accent)">' + weekTotal + 'h</span>'
+        : '<span style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--text-muted)">—</span>') + '</td>' +
+      '<td style="text-align:center">' + todayBadge + '</td>' +
+      '<td style="text-align:right">' + (canLog
+        ? '<div class="log-row"><select class="hour-select" id="sel-' + emp.prn + '">' + options + '</select><button class="log-btn" onclick="logHours(\'' + emp.prn + '\',\'' + emp.name.replace(/'/g,"\\'") + '\')">Log</button></div>'
+        : poolEmpty && canLogDay
+          ? '<span style="font-size:12px;color:var(--warn)">Pool full</span>'
+          : '<span style="font-size:12px;color:var(--text-muted)">—</span>') + '</td>' +
+      '</tr>';
+  }).join('');
+
+  document.getElementById('empBody').innerHTML = topNotice + rows;
+}
+
+async function logHours(prn, name) {
+  var sel = document.getElementById('sel-' + prn);
+  var hours = parseInt(sel ? sel.value : '0');
+  if (!hours) return;
+
+  var btn = document.querySelector('#row-' + prn + ' .log-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+
+  var result = await postLog(prn, toKey(selectedDay), hours);
+
+  if (result.ok) {
+    if (!areaData.logs[prn]) areaData.logs[prn] = {};
+    var dk = toKey(selectedDay);
+    areaData.logs[prn][dk] = (areaData.logs[prn][dk] || 0) + hours;
+    showToast('✓ ' + hours + 'h logged for ' + name, 'success');
+    var row = document.getElementById('row-' + prn);
+    if (row) row.classList.add('row-flash');
+    renderPool(); renderTable();
+  } else {
+    showToast('Failed: ' + (result.msg || 'Check connection'), 'error');
+    if (btn) { btn.disabled = false; btn.textContent = 'Log'; }
+  }
+}
+
+var toastTimer;
+function showToast(msg, type) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show ' + (type||'');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.className = 'toast'; }, 3200);
+}
+
+function init() {
+  var info = getWeekInfo(today);
+  document.getElementById('weekBadge').textContent = 'W' + (info.weekNum+1) + ' · ' + fmt(info.weekStart) + ' – ' + fmt(info.weekEnd);
+  renderTabs(); renderDaySelector(); renderPool(); renderTable();
+  fetchAreaData();
+  setInterval(fetchAreaData, 60000);
+}
+
+init();
+</script>
+</body>
+</html>
