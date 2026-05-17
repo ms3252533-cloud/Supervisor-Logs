@@ -283,7 +283,7 @@ function getWeekInfo(date) {
 }
 
 function fmt(d) { return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}); }
-function toKey(d) { return d.toISOString().slice(0,10); }
+function toKey(d) { var y=d.getFullYear(); var m=String(d.getMonth()+1).padStart(2,"0"); var day=String(d.getDate()).padStart(2,"0"); return y+"-"+m+"-"+day; }
 var DAY_NAMES = ['Sat','Sun','Mon','Tue','Wed','Thu','Fri'];
 
 var currentArea = 'Front Floor';
